@@ -1,10 +1,16 @@
-// src/routes/student.routes.js
-import express from "express";
-import { createStudent } from "../controller/create-student.js";
-import { updateStudent } from "../controller/update-student.js";
+const express = require("express");
+const { createStudent } = require("../controller/create-student");
+const { updateStudent } = require("../controller/update-student");
+const { deleteStudent } = require("../controller/delete-students");
+const { getStudents } = require("../controller/get-student");
+
+// const { updateStudent } = require("../controllers/update-student");
 
 const router = express.Router();
 
-router.post("/create-student", createStudent);  // ✅ POST route
-router.put("/update-student/:id", updateStudent);  // ✅ PUT route for updating student
-export default router;
+router.post("/create-student", createStudent);
+router.post("/update-student", updateStudent);
+router.post("/delete-student", deleteStudent);
+router.post("/get-students", getStudents);
+
+module.exports = router;
