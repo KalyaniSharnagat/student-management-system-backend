@@ -1,18 +1,22 @@
-const { createStudentService } = require("../services/student.service");
+// src/controller/create-student.js
+const studentService = require('../services/student.service');
 
-// Controller: Create Student
-exports.createStudent = async (req, res) => {
+const createStudent = async (req, res, next) => {
   try {
     const studentData = req.body;
+    console.log("Incoming student data:", studentData); // Debug log
 
-    // Call Service
-    const newStudent = await createStudentService(studentData);
+    const result = await studentService.createStudent(studentData);
 
     res.status(201).json({
+      success: true,
       message: "Student created successfully",
-      data: newStudent
+      data: result
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Error in createStudent:", error.message);
+    next(error); // Sends error to global handler
   }
 };
+
+module.exports = { createStudent };
