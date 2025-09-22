@@ -1,18 +1,39 @@
 const studentService = require("../services/student.service");
 
-const deleteStudent = async (req, res, next) => {
+const deleteStudent = async (req, res) => {
     try {
-        const id = req.params.id; // ID comes from URL
-        const result = await studentService.deleteStudent(id);
+        // 📌 Get student ID from route params
+        const id = req.body.id;
+        if (!id) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Student ID is required",
+            });
+        }
 
-        res.status(200).json({
-            success: true,
-            message: "Student deleted",
-            data: result
+        // 📌 Check if student exists
+        const student = await studentService.getStudentById(id);
+        if (!student) {
+            return res.status(404).json({
+                status: "FAILED",
+                message: "Student not found with this ID",
+            });
+        }
+
+        // 📌 Delete student
+        await studentService.deleteStudent(id);
+
+        return res.status(200).json({
+            status: "SUCCESS",
+            message: "Student deleted successfully",
         });
+
     } catch (error) {
-        next(error); // sends "Student not found" if ID doesn't exist
+        return res.status(500).json({
+            status: "FAILED",
+            message: error.message,
+        });
     }
 };
 
-module.exports = { deleteStudent };
+module.exports = deleteStudent;
