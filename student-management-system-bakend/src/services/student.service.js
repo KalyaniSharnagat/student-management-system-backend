@@ -1,57 +1,53 @@
-const pool = require("../db/db");
+const Student = require("../models/student.model");
+const { Op } = require("sequelize");
+const studentService = {
+    createStudent: async (data) => {
+        return await Student.create(data);
+    },
 
-// GET all students
-const getAllStudents = async () => {
-    const result = await pool.query("SELECT * FROM students");
-    return result.rows;
-};
+    getStudentByEmail: async (email) => {
+        return await Student.findOne({ where: { email } });
+    },
 
-// CREATE student
-const createStudent = async (studentData) => {
-    const { first_name, last_name, email, phone, dob, gender, address, city, state, pincode, marks, subject, roll_no, admission_date } = studentData;
+    getStudentById: async (id) => {
+        return await Student.findByPk(id);
+    },
 
-    const emailCheck = await pool.query("SELECT * FROM students WHERE email = $1", [email]);
-    if (emailCheck.rows.length > 0) throw new Error("Email already exists");
 
-    const query = `
-    INSERT INTO students (
-      first_name, last_name, email, phone, dob, gender,
-      address, city, state, pincode, marks, subject, roll_no, admission_date
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-    RETURNING *;
-  `;
-    const values = [first_name, last_name, email, phone, dob, gender, address, city, state, pincode, marks, subject, roll_no, admission_date];
-    const result = await pool.query(query, values);
-    return result.rows[0];
-};
 
-// UPDATE student by ID
-const updateStudent = async (id, studentData) => {
-    const keys = Object.keys(studentData);
-    const values = Object.values(studentData);
+    updateStudent: async (id, dataToUpdate) => {
+        const student = await Student.findByPk(id);
+        if (!student) return null;
+        return await student.update(dataToUpdate);
+    },
 
-    const setQuery = keys.map((key, index) => `${key}=$${index + 1}`).join(", ");
-    const query = `UPDATE students SET ${setQuery} WHERE id=$${keys.length + 1} RETURNING *`;
-    const result = await pool.query(query, [...values, id]);
+    deleteStudent: async (id) => {
+        return await Student.destroy({ where: { id } });
+    },
 
-    if (result.rows.length === 0) throw new Error("Student not found");
-    return result.rows[0];
-};
+    // Get all students with pagination & search
+    getStudentList: async ({ page = 1, limit = 10, searchString = "" }) => {
+        const offset = (page - 1) * limit;
 
-// DELETE student by ID
-const deleteStudent = async (id) => {
-    const result = await pool.query(
-        "DELETE FROM students WHERE id=$1 RETURNING *",
-        [id]
-    );
+        const condition = searchString
+            ? {
+                [Op.or]: [
+                    { first_name: { [Op.iLike]: `%${searchString}%` } },
+                    { last_name: { [Op.iLike]: `%${searchString}%` } },
+                    { email: { [Op.iLike]: `%${searchString}%` } },
+                    { rollno: { [Op.iLike]: `%${searchString}%` } }
+                ]
+            }
+            : {};
 
-    if (result.rows.length === 0) {
-        throw new Error("Student not found"); // <-- this is why you see the error
+        return await Student.findAndCountAll({
+            where: condition,
+            offset,
+            limit,
+            order: [["createdAt", "DESC"]],
+        });
     }
 
-    return result.rows[0];
 };
 
-
-
-module.exports = { getAllStudents, createStudent, updateStudent, deleteStudent };
+module.exports = studentService;

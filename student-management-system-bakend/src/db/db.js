@@ -1,22 +1,35 @@
-const { Pool } = require("pg");
-const dotenv = require("dotenv").config();
+const { Sequelize } = require("sequelize");
+const dotenv = require("dotenv");
+dotenv.config();
 
-const pool = new Pool({
-  host: process.env.PGHOST || "localhost",
-  database: process.env.PGDATABASE || "student_db",
-  user: process.env.PGUSER || "postgres",
-  password: process.env.PGPASSWORD || "your_password",
-  port: process.env.PGPORT || 5432,
-  ssl: process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false,
-});
+const sequelize = new Sequelize(
+    process.env.PGDATABASE || "neondb",
+    process.env.PGUSER || "neondb_owner",
+    process.env.PGPASSWORD || "",
+    {
+        host: process.env.PGHOST,
+        dialect: "postgres",
+        logging: false,
+        dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+    }
+);
 
-pool.connect()
-  .then(client => {
-    console.log("✅ Database connected successfully!");
-    client.release();
-  })
-  .catch(err => {
-    console.error("❌ Database connection error:", err.message);
-  });
+const connectDB = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log("✅ Postgres connected successfully.");
+    } catch (error) {
+        console.error("❌ Unable to connect to Postgres:", error);
+    }
+};
 
-module.exports = pool;
+const createTables = async () => {
+    try {
+        await sequelize.sync({ alter: true });
+        console.log("✅ All tables created successfully.");
+    } catch (error) {
+        console.error("❌ Error creating tables:", error);
+    }
+};
+
+module.exports = { sequelize, connectDB, createTables };
